@@ -4,6 +4,7 @@ const port = 5000
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const config = require('./config/key');
+const { auth } = require("./middleware/auth");
 const { User } = require("./models/User");
 
 //application/x-www-form-urlencoded
@@ -35,7 +36,7 @@ app.post('/register', (req, res) => {
     })
 })
 
-app.post('/login', (req, res) => {
+app.post('/api/users/login', (req, res) => {
 
     //요청된 이메일을 데이터베이스에서 확인한다.
     User.findOne({ email: req.body.email}, (err, user) => {
@@ -60,13 +61,26 @@ app.post('/login', (req, res) => {
                 //토큰을 저장한다. 어디에? 쿠키? 로컬스토리지?
                 res.cookie("x_auth", user.token)
                 .status(200)
-                .json({ loginSuccess: true, userId: user._id})
+                .json({ loginSuccess: true, userId: user._id })
 
             })
         })
 
     })
 
+})
+
+app.get('/api/users/auth', auth, (req, res)=>{
+    //미들웨어를 통과해왔다는 얘기는 Authentication이 True라는 말
+    res.status(200).json({
+        _id: req.user._id,
+        isAdin: req.user.role === 0 ? false : true,
+        email: req.user.email,
+        name: req.user.name,
+        lastname: req.user.lastname,
+        role: req.user.role,
+        image: req.user.image
+    })
 })
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))
